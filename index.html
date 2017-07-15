@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {css href="/public/static/bootstrap/css/bootstrap.css" /}
+    {css href="/public/static/font-awesome-4.7.0/css/font-awesome.min.css" /}
+    {css href="/public/static/layui/css/layui.css" /}
+    {js href="/public/static/bootstrap/js/jquery.min.js" /}
+    {js href="/public/static/layui/layui.js" /}
+</head>
+<body>
+<div style="margin-left: 10px;margin-right: 10px;">
+    <div class="btn-group" role="group" aria-label="...">
+        <button type="button" class="btn btn-default" onclick="makeFile();">创建文件</button>
+        <button type="button" class="btn btn-default">Middle</button>
+        <button type="button" class="btn btn-default">Right</button>
+    </div>
+
+    <form class="form-inline">
+        <div class="form-group">
+            <label class="sr-only" for="fileName">文件名</label>
+            <input type="text" class="form-control" id="fileName" placeholder="文件名">
+        </div>
+        <button type="submit" class="btn btn-default" onclick="makeFile();">创建文件</button>
+    </form>
+    <div class="modal fade" id="myModalaaa" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+                </div>
+                <div class="modal-body">
+                    ...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <tr class="active">
+                <td>编号</td>
+                <td>名称</td>
+                <td>类型</td>
+                <td>大小</td>
+                <td>可读</td>
+                <td>可写</td>
+                <td>可执行</td>
+                <td>创建时间</td>
+                <td>修改时间</td>
+                <td>访问时间</td>
+                <td>操作</td>
+            </tr>
+
+            {volist name="filename" id="vo" }
+            <tr id="tr_{$vo.num}">
+                <td class="active">{$vo.num}</td>
+                <input type="hidden" id="path_{$vo.num}" value="{:iconv('gbk','utf-8',$vo.path)}">
+                <td class="active" id="file_{$vo.num}">{$vo.file}</td>
+                <td class="active">
+                    {if condition="$vo.type eq 'file'"}
+                    <i class="fa fa-file fa-lg"></i>
+                    {else /}
+                    <i class="fa fa-folder-open fa-lg"></i>
+                    {/if}
+                </td>
+                <td class="active">{$vo.filesize}</td>
+                <td class="active">
+                    {if condition="$vo.is_readable eq 1"}
+                    <i class="fa fa-check fa-lg"></i>
+                    {else /}
+                    <i class="fa fa-close fa-lg"></i>
+                    {/if}
+                </td>
+                <td class="active">
+                    {if condition="$vo.is_writable eq 1"}
+                    <i class="fa fa-check fa-lg"></i>
+                    {else /}
+                    <i class="fa fa-close fa-lg"></i>
+                    {/if}
+                </td>
+                <td class="active">
+                    {if condition="$vo.is_executable eq 1"}
+                    <i class="fa fa-check fa-lg"></i>
+                    {else /}
+                    <i class="fa fa-close fa-lg"></i>
+                    {/if}
+                </td>
+                <td class="active">{$vo.filectime}</td>
+                <td class="active">{$vo.filemtime}</td>
+                <td class="active">{$vo.fileatime}</td>
+                <td class="active">
+                    <i class="fa fa-eye fa-lg" onclick="operation('view','{$vo.num}');"></i>
+                    <i class="fa fa-edit fa-lg" onclick="operation('edit','{$vo.num}');"></i>
+                    <i class="fa fa-pencil fa-lg" onclick="operation('rename','{$vo.num}','{$vo.file}');"></i>
+                    <i class="fa fa-download fa-lg" onclick="operation('download','{$vo.num}');"></i>
+                    <i class="fa fa-trash fa-lg" onclick="operation('delete','{$vo.num}');"></i>
+                </td>
+            </tr>
+            {/volist}
+
+        </table>
+    </div>
+
+
+
+</div>
+</body>
+<script>
+    layui.use('layer', function(){
+        var layer = layui.layer;
+    });
+    /**
+     * 创建文件
+     */
+    function makeFile() {
+        var fileName = $('#fileName').val();
+        $.ajax({
+            type: "POST",
+            url: "{:url('home/index/touchFile')}",
+            data: {name:fileName},
+            dataType: "json",
+            success: function (msg) {
+                if (msg['status'] == 1){
+                    layer.msg('status:'+msg['status']+'info:'+msg['info']);
+                }else{
+                    layer.msg('status:'+msg['status']+'info:'+msg['info']);
+                }
+            }
+        });
+    }
+
+    function operation(operate, file_id, filename){
+        var data = '';
+        var url = '';
+        var new_url = '';
+        var file_path = $('#path_'+file_id).val();
+        switch (operate){
+            case 'view':
+                data = {operate:'view',filepath:file_path};
+                url = "{:url('home/index/operateFile')}";
+                new_url = '{:url("home/index/viewFile")}?path=';
+                break;
+            case 'edit':
+                data = {operate:'edit',filepath:file_path};
+                url = "{:url('home/index/operateFile')}";
+                new_url = '{:url("home/index/editFile")}?path=';
+                break;
+            case 'rename':
+                    layer.prompt({
+                        formType: 3,
+                        title: '文件名',
+                        area: ['100px', '20px'] //自定义文本域宽高
+                    }, function(value, index, elem){
+                         $.ajax({type:"POST",url:"{:url('home/index/fileRename')}",data:{filepath:file_path, newName:value},dataType:"json",success:function(msg){
+                             if (msg['status'] == -1){
+                                 layer.msg('status:'+msg['status']+'info:'+msg['info']);
+                             }else{
+                                 $('#file_'+file_id).text(msg['filename']);
+                                 $('#path_'+file_id).val(msg['filepath']);
+                                 layer.msg('status:'+msg['status']+'info:'+msg['info']);
+                             }
+                         }});
+                        layer.close(index);
+                    });
+                return;
+                break;
+            case 'download':
+                $.ajax({type:"GET",url:"{:url('home/index/downloadFile')}",data:{filepath:file_path},dataType:"json",success:function(msg){
+                    if (msg['status'] == -1){
+                        layer.msg('status:'+msg['status']+'info:'+msg['info']);
+                    }else{
+                        window.location.href = "{:url('home/index/download')}?filepath=" + file_path;
+                    }
+                }});
+                return;
+                break;
+            case 'delete':
+                $.ajax({type:"GET",url:"{:url('home/index/deleteFile')}",data:{filepath:file_path},dataType:"json",success:function(msg){
+                    if (msg['status'] == -1){
+                        layer.msg('status:'+msg['status']+'info:'+msg['info']);
+                    }else{
+                        layer.msg('status:'+msg['status']+'info:'+msg['info']);
+                        setTimeout(function () {
+                            $('#tr_'+file_id).remove();
+                        }, 3500);
+                    }
+                }});
+                return;
+                break;
+        }
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data,
+            dataType: "json",
+            success: function (msg) {
+                if (msg['status'] == -1){
+                    layer.msg('status:'+msg['status']+'info:'+msg['info']);
+                }else if(msg['status'] == 2){
+                    layer.open({
+                        type: 1,
+                        offset: '25%',
+                        area: ['500px', '300px'],
+                        shade: [0.8, '#393D49'],
+                        resize: true,
+                        scrollbar: true,
+                        shadeClose: true,
+                        title: msg['imgName'],
+                        content: '<img style="max-width:100%;" src="/public/'+msg['path']+'">' //这里content是一个普通的String
+                    });
+                }else{
+                    window.location.href = new_url + msg['path'];
+                }
+            }
+        });
+    }
+</script>
+</html>
